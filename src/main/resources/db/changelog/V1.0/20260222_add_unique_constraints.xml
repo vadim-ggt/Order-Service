@@ -4,11 +4,9 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
-
-
-    <include file="db/changelog/v1.0/20260221_create_tables.xml"/>
-    <include file="db/changelog/v1.0/20260221_add_constraints.xml"/>
-    <include file="db/changelog/v1.0/20260221_add_indexes.xml"/>
-    <include file="db/changelog/v1.0/20260222_add_unique_constraints.xml"/>
-
+<changeSet id="20260222-4" author="vadim-ggt">
+    <addUniqueConstraint tableName="order_items"
+                         columnNames="order_id, item_id"
+                         constraintName="uk_order_items_order_item" />
+</changeSet>
 </databaseChangeLog>
