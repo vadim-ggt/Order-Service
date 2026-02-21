@@ -4,6 +4,8 @@ import com.innowise.orderservice.domain.base.BaseEntity;
 import com.innowise.orderservice.domain.entity.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -11,6 +13,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders")
+@SQLDelete(sql = "UPDATE orders SET deleted = true WHERE id = ?")
+@SQLRestriction("deleted = false") // чтобы не писать масляное AndDeletedFalse каждый раз
 @Getter
 @Setter
 @NoArgsConstructor
