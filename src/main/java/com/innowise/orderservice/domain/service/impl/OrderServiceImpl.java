@@ -6,6 +6,8 @@
     import com.innowise.orderservice.domain.entity.Order;
     import com.innowise.orderservice.domain.entity.OrderItem;
     import com.innowise.orderservice.domain.entity.enums.OrderStatus;
+    import com.innowise.orderservice.domain.exception.ItemNotFoundException;
+    import com.innowise.orderservice.domain.exception.OrderNotFoundException;
     import com.innowise.orderservice.domain.mapper.order.OrderMapper;
     import com.innowise.orderservice.domain.service.OrderService;
     import com.innowise.orderservice.domain.specification.OrderSpecification;
@@ -49,7 +51,7 @@
 
             for (OrderItemRequestDto itemRequest : requestDto.items()) {
                 Item item = itemRepository.findById(itemRequest.itemId())
-                        .orElseThrow(() -> new EntityNotFoundException("Item not found: " + itemRequest.itemId()));
+                        .orElseThrow(() -> new ItemNotFoundException("Item not found with id: " + itemRequest.itemId()));
 
                 OrderItem orderItem = new OrderItem();
                 orderItem.setItem(item);
@@ -69,7 +71,7 @@
         @Override
         public OrderResponseDto getOrderById(Long id, String email) {
             Order order = orderRepository.findById(id)
-                    .orElseThrow(() -> new EntityNotFoundException("Order not found: " + id));
+                    .orElseThrow(() -> new OrderNotFoundException("Order not found: " + id));
 
             UserInfoDto userInfo = userClient.getUserByEmail(email);
             return orderMapper.toDtoWithUser(order, userInfo);
@@ -102,7 +104,7 @@
         @Transactional
         public OrderResponseDto updateOrderStatus(Long id, UpdateOrderStatusDto statusDto, String email) {
             Order order = orderRepository.findById(id)
-                    .orElseThrow(() -> new EntityNotFoundException("Order not found: " + id));
+                    .orElseThrow(() -> new OrderNotFoundException("Order not found: " + id));
 
             order.setStatus(statusDto.status());
 
@@ -117,7 +119,7 @@
         @Transactional
         public void deleteOrder(Long id) {
             if (!orderRepository.existsById(id)) {
-                throw new EntityNotFoundException("Order not found: " + id);
+                throw new OrderNotFoundException("Order not found: " + id);
             }
             orderRepository.deleteById(id);
         }
