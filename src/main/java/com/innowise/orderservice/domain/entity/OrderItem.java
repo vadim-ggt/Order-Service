@@ -2,6 +2,7 @@ package com.innowise.orderservice.domain.entity;
 
 import com.innowise.orderservice.domain.base.BaseEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 
 @Entity
@@ -34,5 +35,6 @@ public class OrderItem extends BaseEntity {
     private Item item;
 
     @Column(nullable = false)
+    @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;
 }
