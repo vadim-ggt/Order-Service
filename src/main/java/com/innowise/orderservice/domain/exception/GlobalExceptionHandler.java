@@ -162,4 +162,17 @@ public class GlobalExceptionHandler {
                 request
         );
     }
+
+    @ExceptionHandler(ExternalServiceUnavailableException.class)
+    public ResponseEntity<ErrorResponseDto> handleExternalServiceUnavailable(
+            ExternalServiceUnavailableException ex,
+            WebRequest request
+    ) {
+        log.warn("External service unavailable: {}", ex.getMessage());
+        return buildErrorResponse(
+                ex.getMessage(),
+                HttpStatus.SERVICE_UNAVAILABLE,
+                request
+        );
+    }
 }
