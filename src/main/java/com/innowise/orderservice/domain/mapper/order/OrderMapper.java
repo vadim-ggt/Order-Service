@@ -12,6 +12,7 @@ import org.mapstruct.Mapping;
 public interface OrderMapper extends GenericMapper<Order, OrderResponseDto> {
 
     @Mapping(target = "user", source = "userInfo")
+    @Mapping(target = "items", source = "order.orderItems")
     OrderResponseDto toDtoWithUser(Order order, UserInfoDto userInfo);
 
     @Mapping(target = "id", ignore = true)

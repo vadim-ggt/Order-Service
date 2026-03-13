@@ -6,16 +6,17 @@
     import com.innowise.orderservice.domain.entity.Order;
     import com.innowise.orderservice.domain.entity.OrderItem;
     import com.innowise.orderservice.domain.entity.enums.OrderStatus;
+    import com.innowise.orderservice.domain.exception.ItemNotFoundException;
+    import com.innowise.orderservice.domain.exception.OrderNotFoundException;
     import com.innowise.orderservice.domain.mapper.order.OrderMapper;
     import com.innowise.orderservice.domain.service.OrderService;
     import com.innowise.orderservice.domain.specification.OrderSpecification;
-    import com.innowise.orderservice.web.client.UserClient;
+    import com.innowise.orderservice.web.client.provider.UserProvider;
     import com.innowise.orderservice.web.dto.request.OrderItemRequestDto;
     import com.innowise.orderservice.web.dto.request.OrderRequestDto;
     import com.innowise.orderservice.web.dto.request.UpdateOrderStatusDto;
     import com.innowise.orderservice.web.dto.response.OrderResponseDto;
     import com.innowise.orderservice.web.dto.user.UserInfoDto;
-    import jakarta.persistence.EntityNotFoundException;
     import lombok.RequiredArgsConstructor;
     import org.springframework.data.domain.Page;
     import org.springframework.data.domain.Pageable;
@@ -36,7 +37,8 @@
         private final OrderRepository orderRepository;
         private final ItemRepository itemRepository;
         private final OrderMapper orderMapper;
-        private final UserClient userClient;
+
+        private final UserProvider userProvider;
 
         @Override
         @Transactional
@@ -49,7 +51,7 @@
 
             for (OrderItemRequestDto itemRequest : requestDto.items()) {
                 Item item = itemRepository.findById(itemRequest.itemId())
-                        .orElseThrow(() -> new EntityNotFoundException("Item not found: " + itemRequest.itemId()));
+                        .orElseThrow(() -> new ItemNotFoundException("Item not found with id: " + itemRequest.itemId()));
 
                 OrderItem orderItem = new OrderItem();
                 orderItem.setItem(item);
@@ -62,16 +64,16 @@
             order.setTotalPrice(totalPrice);
             Order savedOrder = orderRepository.save(order);
 
-            UserInfoDto userInfo = userClient.getUserByEmail(email);
+            UserInfoDto userInfo = userProvider.getStrictUserInfo(email);
             return orderMapper.toDtoWithUser(savedOrder, userInfo);
         }
 
         @Override
         public OrderResponseDto getOrderById(Long id, String email) {
             Order order = orderRepository.findById(id)
-                    .orElseThrow(() -> new EntityNotFoundException("Order not found: " + id));
+                    .orElseThrow(() -> new OrderNotFoundException("Order not found: " + id));
 
-            UserInfoDto userInfo = userClient.getUserByEmail(email);
+            UserInfoDto userInfo = userProvider.getUserInfoForRead(email);
             return orderMapper.toDtoWithUser(order, userInfo);
         }
 
@@ -93,7 +95,7 @@
 
             Page<Order> orderPage = orderRepository.findAll(spec, pageable);
 
-            UserInfoDto userInfo = userClient.getUserByEmail(email);
+            UserInfoDto userInfo = userProvider.getUserInfoForRead(email);
 
             return orderPage.map(order -> orderMapper.toDtoWithUser(order, userInfo));
         }
@@ -102,13 +104,13 @@
         @Transactional
         public OrderResponseDto updateOrderStatus(Long id, UpdateOrderStatusDto statusDto, String email) {
             Order order = orderRepository.findById(id)
-                    .orElseThrow(() -> new EntityNotFoundException("Order not found: " + id));
+                    .orElseThrow(() -> new OrderNotFoundException("Order not found: " + id));
 
             order.setStatus(statusDto.status());
 
             Order updatedOrder = orderRepository.save(order);
 
-            UserInfoDto userInfo = userClient.getUserByEmail(email);
+            UserInfoDto userInfo = userProvider.getStrictUserInfo(email);
             return orderMapper.toDtoWithUser(updatedOrder, userInfo);
         }
 
@@ -117,7 +119,7 @@
         @Transactional
         public void deleteOrder(Long id) {
             if (!orderRepository.existsById(id)) {
-                throw new EntityNotFoundException("Order not found: " + id);
+                throw new OrderNotFoundException("Order not found: " + id);
             }
             orderRepository.deleteById(id);
         }
@@ -126,7 +128,7 @@
         public Page<OrderResponseDto> getOrdersByUserId(UUID userId, String email, Pageable pageable) {
             Page<Order> orderPage = orderRepository.findAllByUserId(userId, pageable);
 
-            UserInfoDto userInfo = userClient.getUserByEmail(email);
+            UserInfoDto userInfo = userProvider.getStrictUserInfo(email);
 
             return orderPage.map(order -> orderMapper.toDtoWithUser(order, userInfo));
         }
@@ -135,7 +137,7 @@
         public Page<OrderResponseDto> getOrdersByIds(List<Long> ids, String email, Pageable pageable) {
             Page<Order> orderPage = orderRepository.findAllByIdIn(ids, pageable);
 
-            UserInfoDto userInfo = userClient.getUserByEmail(email);
+            UserInfoDto userInfo = userProvider.getUserInfoForRead(email);
 
             return orderPage.map(order -> orderMapper.toDtoWithUser(order, userInfo));
         }
