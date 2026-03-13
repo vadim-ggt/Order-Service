@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  postgres-order:
+    image: postgres:17-alpine
+    container_name: order-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_HOST_PORT}:5432"
+    volumes:
+      - order_pgdata:/var/lib/postgresql/data
+    networks:
+      - shared-net
+
+  order-service:
+    build: .
+    container_name: order-app
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    env_file:
+      - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DOCKER_DB_HOST=postgres-order
+    depends_on:
+      - postgres-order
+    networks:
+      - shared-net
+
+networks:
+  shared-net:
+    name: my_shared_network
+    external: true
+
+volumes:
+  order_pgdata:

@@ -128,7 +128,7 @@
         public Page<OrderResponseDto> getOrdersByUserId(UUID userId, String email, Pageable pageable) {
             Page<Order> orderPage = orderRepository.findAllByUserId(userId, pageable);
 
-            UserInfoDto userInfo = userProvider.getStrictUserInfo(email);
+            UserInfoDto userInfo = userProvider.getUserInfoForRead(email);
 
             return orderPage.map(order -> orderMapper.toDtoWithUser(order, userInfo));
         }
