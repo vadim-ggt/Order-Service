@@ -208,7 +208,10 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
 
         when(orderRepository.findAllByUserId(TEST_USER_ID, pageable)).thenReturn(orderPage);
-        when(userProvider.getStrictUserInfo(TEST_EMAIL)).thenReturn(testUserInfo);
+
+        // ВАЖНО: здесь нужно мокать именно getUserInfoForRead, а не getStrictUserInfo!
+        when(userProvider.getUserInfoForRead(TEST_EMAIL)).thenReturn(testUserInfo);
+
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
         Page<OrderResponseDto> result = orderService.getOrdersByUserId(TEST_USER_ID, TEST_EMAIL, pageable);
