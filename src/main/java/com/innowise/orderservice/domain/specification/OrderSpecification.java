@@ -6,6 +6,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.UUID;
 
 public final class OrderSpecification {
 
@@ -35,7 +36,7 @@ public final class OrderSpecification {
         };
     }
 
-    public static Specification<Order> hasUserId(Long userId) {
+    public static Specification<Order> hasUserId(UUID userId) {
         return (root, query, cb) ->
                 userId == null ? cb.conjunction() : cb.equal(root.get("userId"), userId);
     }

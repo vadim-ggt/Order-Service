@@ -35,6 +35,5 @@ public class OrderItem extends BaseEntity {
     private Item item;
 
     @Column(nullable = false)
-    @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;
 }
