@@ -58,7 +58,7 @@ public class ItemControllerIntegrationTest extends BaseIntegrationTest {
     void test_createItem_Success_AsAdmin() throws Exception {
         ItemRequestDto request = new ItemRequestDto("MacBook Pro", new BigDecimal("2500.00"));
 
-        mockMvc.perform(post("/api/v1/items")
+        mockMvc.perform(post("/api/items")
                         .with(jwt().authorities(adminAuth()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -74,7 +74,7 @@ public class ItemControllerIntegrationTest extends BaseIntegrationTest {
     void test_createItem_Forbidden_AsUser() throws Exception {
         ItemRequestDto request = new ItemRequestDto("MacBook Pro", new BigDecimal("2500.00"));
 
-        mockMvc.perform(post("/api/v1/items")
+        mockMvc.perform(post("/api/items")
                         .with(jwt().authorities(userAuth()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -86,7 +86,7 @@ public class ItemControllerIntegrationTest extends BaseIntegrationTest {
         // Отправляем пустую строку и отрицательную цену
         ItemRequestDto request = new ItemRequestDto("", new BigDecimal("-10.00"));
 
-        mockMvc.perform(post("/api/v1/items")
+        mockMvc.perform(post("/api/items")
                         .with(jwt().authorities(adminAuth()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -99,7 +99,7 @@ public class ItemControllerIntegrationTest extends BaseIntegrationTest {
     void test_getItemById_Success() throws Exception {
         Item savedItem = createTestItem("iPhone", "999.00");
 
-        mockMvc.perform(get("/api/v1/items/{id}", savedItem.getId())
+        mockMvc.perform(get("/api/items/{id}", savedItem.getId())
                         .with(jwt().authorities(userAuth())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("iPhone"));
@@ -107,7 +107,7 @@ public class ItemControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void test_getItemById_NotFound() throws Exception {
-        mockMvc.perform(get("/api/v1/items/{id}", 99999L)
+        mockMvc.perform(get("/api/items/{id}", 99999L)
                         .with(jwt().authorities(userAuth())))
                 .andExpect(status().isNotFound());
     }
@@ -117,7 +117,7 @@ public class ItemControllerIntegrationTest extends BaseIntegrationTest {
         createTestItem("Item 1", "10.00");
         createTestItem("Item 2", "20.00");
 
-        mockMvc.perform(get("/api/v1/items?page=0&size=10")
+        mockMvc.perform(get("/api/items?page=0&size=10")
                         .with(jwt().authorities(userAuth())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(2)))
@@ -130,7 +130,7 @@ public class ItemControllerIntegrationTest extends BaseIntegrationTest {
         Item savedItem = createTestItem("Old Name", "100.00");
         ItemRequestDto updateRequest = new ItemRequestDto("New Name", new BigDecimal("150.00"));
 
-        mockMvc.perform(put("/api/v1/items/{id}", savedItem.getId())
+        mockMvc.perform(put("/api/items/{id}", savedItem.getId())
                         .with(jwt().authorities(adminAuth()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
@@ -144,7 +144,7 @@ public class ItemControllerIntegrationTest extends BaseIntegrationTest {
         Item savedItem = createTestItem("Old Name", "100.00");
         ItemRequestDto updateRequest = new ItemRequestDto("New Name", new BigDecimal("150.00"));
 
-        mockMvc.perform(put("/api/v1/items/{id}", savedItem.getId())
+        mockMvc.perform(put("/api/items/{id}", savedItem.getId())
                         .with(jwt().authorities(userAuth()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
@@ -155,7 +155,7 @@ public class ItemControllerIntegrationTest extends BaseIntegrationTest {
     void test_deleteItem_Success_AsAdmin() throws Exception {
         Item savedItem = createTestItem("To Delete", "50.00");
 
-        mockMvc.perform(delete("/api/v1/items/{id}", savedItem.getId())
+        mockMvc.perform(delete("/api/items/{id}", savedItem.getId())
                         .with(jwt().authorities(adminAuth())))
                 .andExpect(status().isNoContent());
 
@@ -166,7 +166,7 @@ public class ItemControllerIntegrationTest extends BaseIntegrationTest {
     void test_deleteItem_Forbidden_AsUser() throws Exception {
         Item savedItem = createTestItem("To Delete", "50.00");
 
-        mockMvc.perform(delete("/api/v1/items/{id}", savedItem.getId())
+        mockMvc.perform(delete("/api/items/{id}", savedItem.getId())
                         .with(jwt().authorities(userAuth())))
                 .andExpect(status().isForbidden());
     }

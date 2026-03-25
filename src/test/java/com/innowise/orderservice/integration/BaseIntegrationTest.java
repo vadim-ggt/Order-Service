@@ -18,7 +18,7 @@ import org.testcontainers.utility.DockerImageName;
 @AutoConfigureWireMock(port = 0)
 @TestPropertySource(properties = {
         "application.config.user-url=http://localhost:${wiremock.server.port}",
-        "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:${wiremock.server.port}/.well-known/jwks.json", // Добавьте эту строку
+        "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:${wiremock.server.port}/.well-known/jwks.json",
         "spring.cloud.discovery.enabled=false"
 })
 public abstract class BaseIntegrationTest {
