@@ -12,23 +12,22 @@ import java.util.List;
 import java.util.UUID;
 
 public interface OrderService {
-    OrderResponseDto createOrder(OrderRequestDto requestDto, UUID userId, String email);
+    OrderResponseDto createOrder(OrderRequestDto requestDto, UUID userId);
 
-    OrderResponseDto getOrderById(Long id, String email);
+    OrderResponseDto getOrderById(Long id);
 
     Page<OrderResponseDto> getFilteredOrders(UUID userId,
-                                             String email,
                                              List<OrderStatus> statuses,
                                              LocalDateTime from,
                                              LocalDateTime to,
                                              Pageable pageable);
 
-    OrderResponseDto updateOrderStatus(Long id, UpdateOrderStatusDto statusDto, String email);
+    OrderResponseDto updateOrderStatus(Long id, UpdateOrderStatusDto statusDto);
 
     void deleteOrder(Long id);
 
-    Page<OrderResponseDto> getOrdersByUserId(UUID userId, String email, Pageable pageable);
+    Page<OrderResponseDto> getOrdersByUserId(UUID userId, Pageable pageable);
 
-    Page<OrderResponseDto> getOrdersByIds(List<Long> ids, String email, Pageable pageable);
+    Page<OrderResponseDto> getOrdersByIds(List<Long> ids, Pageable pageable);
 
 }

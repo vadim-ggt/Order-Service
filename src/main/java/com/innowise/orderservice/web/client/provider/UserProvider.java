@@ -8,29 +8,31 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class UserProvider {
     private final UserClient userClient;
 
-    @CircuitBreaker(name = "userService", fallbackMethod = "getUserByEmailFallback")
-    public UserInfoDto getUserInfoForRead(String email) {
-        return userClient.getUserByEmail(email);
+    @CircuitBreaker(name = "userService", fallbackMethod = "getUserByIdFallback")
+    public UserInfoDto getUserInfoByIdForRead(UUID userId) {
+        return userClient.getUserById(userId);
     }
 
-    @CircuitBreaker(name = "userService", fallbackMethod = "getUserByEmailStrictFallback")
-    public UserInfoDto getStrictUserInfo(String email) {
-        return userClient.getUserByEmail(email);
+    @CircuitBreaker(name = "userService", fallbackMethod = "getUserByIdStrictFallback")
+    public UserInfoDto getStrictUserInfoById(UUID userId) {
+        return userClient.getUserById(userId);
     }
 
-    private UserInfoDto getUserByEmailFallback(String email, Throwable exception) {
-        log.warn("User Service is down. Returning dummy user for email: {}", email);
-        return new UserInfoDto(null, "User details temporarily unavailable", "N/A", email, null);
+    private UserInfoDto getUserByIdFallback(UUID userId, Throwable exception) {
+        log.warn("User Service is down. Returning dummy user for ID: {}", userId);
+        return new UserInfoDto(userId, "User details temporarily unavailable", "N/A", "N/A", null);
     }
 
-    private UserInfoDto getUserByEmailStrictFallback(String email, Throwable exception) {
-        log.error("User Service is down. Cannot perform strict operation for email: {}", email);
+    private UserInfoDto getUserByIdStrictFallback(UUID userId, Throwable exception) {
+        log.error("User Service is down. Cannot perform strict operation for ID: {}", userId);
         throw new ExternalServiceUnavailableException("User Service is unavailable. Please try again later.");
     }
 }

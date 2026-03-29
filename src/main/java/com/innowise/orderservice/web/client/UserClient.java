@@ -4,7 +4,10 @@ import com.innowise.orderservice.domain.config.FeignClientConfig;
 import com.innowise.orderservice.web.dto.user.UserInfoDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.UUID;
 
 @FeignClient(
         name = "user-service",
@@ -13,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
         configuration = FeignClientConfig.class
 )
 public interface UserClient {
-    @GetMapping("/by-email")
-    UserInfoDto getUserByEmail(@RequestParam("email") String email);
+    @GetMapping("/by-uuid/{userId}")
+    UserInfoDto getUserById(@PathVariable("userId") UUID id);
 
 }

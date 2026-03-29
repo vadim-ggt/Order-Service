@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/orders")
+@RequestMapping("/api/orders")
 @RequiredArgsConstructor
 public class OrderController {
 
@@ -37,20 +37,15 @@ public class OrderController {
             JwtAuthenticationToken jwtToken) {
 
         UUID userId = UUID.fromString(jwtToken.getToken().getSubject());
-        String email = jwtToken.getToken().getClaimAsString("email");
 
-        OrderResponseDto createdOrder = orderService.createOrder(requestDto, userId, email);
+        OrderResponseDto createdOrder = orderService.createOrder(requestDto, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder);
     }
 
     @GetMapping("/{id}")
     @IsOwnerOrAdmin
-    public ResponseEntity<OrderResponseDto> getOrderById(
-            @PathVariable Long id,
-            JwtAuthenticationToken jwtToken) {
-
-        String email = jwtToken.getToken().getClaimAsString("email");
-        return ResponseEntity.ok(orderService.getOrderById(id, email));
+    public ResponseEntity<OrderResponseDto> getOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.getOrderById(id));
     }
 
     @GetMapping("/my")
@@ -60,9 +55,8 @@ public class OrderController {
             JwtAuthenticationToken jwtToken) {
 
         UUID userId = UUID.fromString(jwtToken.getToken().getSubject());
-        String email = jwtToken.getToken().getClaimAsString("email");
 
-        return ResponseEntity.ok(orderService.getOrdersByUserId(userId, email, pageable));
+        return ResponseEntity.ok(orderService.getOrdersByUserId(userId, pageable));
     }
 
     @GetMapping("/search")
@@ -72,33 +66,27 @@ public class OrderController {
             @RequestParam(required = false) List<OrderStatus> statuses,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
-            Pageable pageable,
-            JwtAuthenticationToken jwtToken) {
+            Pageable pageable) {
 
-        String adminEmail = jwtToken.getToken().getClaimAsString("email");
-        return ResponseEntity.ok(orderService.getFilteredOrders(userId, adminEmail, statuses, from, to, pageable));
+        return ResponseEntity.ok(orderService.getFilteredOrders(userId, statuses, from, to, pageable));
     }
 
     @GetMapping("/by-ids")
     @IsAdmin
     public ResponseEntity<Page<OrderResponseDto>> getOrdersByIds(
             @RequestParam("ids") List<Long> ids,
-            Pageable pageable,
-            JwtAuthenticationToken jwtToken) {
+            Pageable pageable) {
 
-        String adminEmail = jwtToken.getToken().getClaimAsString("email");
-        return ResponseEntity.ok(orderService.getOrdersByIds(ids, adminEmail, pageable));
+        return ResponseEntity.ok(orderService.getOrdersByIds(ids, pageable));
     }
 
     @PutMapping("/{id}/status")
     @IsAdmin
     public ResponseEntity<OrderResponseDto> updateOrderStatus(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateOrderStatusDto statusDto,
-            JwtAuthenticationToken jwtToken) {
+            @Valid @RequestBody UpdateOrderStatusDto statusDto) {
 
-        String adminEmail = jwtToken.getToken().getClaimAsString("email");
-        return ResponseEntity.ok(orderService.updateOrderStatus(id, statusDto, adminEmail));
+        return ResponseEntity.ok(orderService.updateOrderStatus(id, statusDto));
     }
 
     @DeleteMapping("/{id}")
