@@ -57,7 +57,6 @@ class OrderServiceImplTest {
     private OrderServiceImpl orderService;
 
     private final UUID TEST_USER_ID = UUID.randomUUID();
-    private final String TEST_EMAIL = "test@example.com";
     private final Long TEST_ORDER_ID = 100L;
 
     private Item testItem;
@@ -75,14 +74,13 @@ class OrderServiceImplTest {
         testOrder.setStatus(OrderStatus.CREATED);
         testOrder.setTotalPrice(new BigDecimal("2000.00"));
 
-        testUserInfo = new UserInfoDto(TEST_USER_ID, "John", "Doe", TEST_EMAIL, LocalDate.of(1990, 1, 1));
+        testUserInfo = new UserInfoDto(TEST_USER_ID, "John", "Doe", "test@example.com", LocalDate.of(1990, 1, 1));
 
         testResponseDto = new OrderResponseDto(
                 TEST_ORDER_ID, OrderStatus.CREATED, new BigDecimal("2000.00"),
                 null, List.of(), testUserInfo
         );
     }
-
 
 
     @Test
@@ -92,10 +90,10 @@ class OrderServiceImplTest {
 
         when(itemRepository.findById(1L)).thenReturn(Optional.of(testItem));
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
-        when(userProvider.getStrictUserInfo(TEST_EMAIL)).thenReturn(testUserInfo);
+        when(userProvider.getStrictUserInfoById(TEST_USER_ID)).thenReturn(testUserInfo);
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
-        OrderResponseDto result = orderService.createOrder(requestDto, TEST_USER_ID, TEST_EMAIL);
+        OrderResponseDto result = orderService.createOrder(requestDto, TEST_USER_ID);
 
         assertNotNull(result);
         assertEquals(TEST_ORDER_ID, result.id());
@@ -103,7 +101,7 @@ class OrderServiceImplTest {
 
         verify(itemRepository, times(1)).findById(1L);
         verify(orderRepository, times(1)).save(any(Order.class));
-        verify(userProvider, times(1)).getStrictUserInfo(TEST_EMAIL);
+        verify(userProvider, times(1)).getStrictUserInfoById(TEST_USER_ID);
     }
 
     @Test
@@ -114,7 +112,7 @@ class OrderServiceImplTest {
         when(itemRepository.findById(99L)).thenReturn(Optional.empty());
 
         ItemNotFoundException exception = assertThrows(ItemNotFoundException.class, () ->
-                orderService.createOrder(requestDto, TEST_USER_ID, TEST_EMAIL)
+                orderService.createOrder(requestDto, TEST_USER_ID)
         );
 
         assertEquals("Item not found with id: 99", exception.getMessage());
@@ -125,10 +123,10 @@ class OrderServiceImplTest {
     @Test
     void getOrderById_Success() {
         when(orderRepository.findById(TEST_ORDER_ID)).thenReturn(Optional.of(testOrder));
-        when(userProvider.getUserInfoForRead(TEST_EMAIL)).thenReturn(testUserInfo);
+        when(userProvider.getUserInfoByIdForRead(TEST_USER_ID)).thenReturn(testUserInfo);
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
-        OrderResponseDto result = orderService.getOrderById(TEST_ORDER_ID, TEST_EMAIL);
+        OrderResponseDto result = orderService.getOrderById(TEST_ORDER_ID);
 
         assertNotNull(result);
         assertEquals(TEST_ORDER_ID, result.id());
@@ -139,9 +137,9 @@ class OrderServiceImplTest {
         when(orderRepository.findById(TEST_ORDER_ID)).thenReturn(Optional.empty());
 
         assertThrows(OrderNotFoundException.class, () ->
-                orderService.getOrderById(TEST_ORDER_ID, TEST_EMAIL)
+                orderService.getOrderById(TEST_ORDER_ID)
         );
-        verify(userProvider, never()).getUserInfoForRead(anyString());
+        verify(userProvider, never()).getUserInfoByIdForRead(any(UUID.class));
     }
 
 
@@ -152,11 +150,11 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
 
         when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
-        when(userProvider.getUserInfoForRead(TEST_EMAIL)).thenReturn(testUserInfo);
+        when(userProvider.getUserInfoByIdForRead(TEST_USER_ID)).thenReturn(testUserInfo);
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
         Page<OrderResponseDto> result = orderService.getFilteredOrders(
-                TEST_USER_ID, TEST_EMAIL, List.of(OrderStatus.CREATED), null, null, pageable
+                TEST_USER_ID, List.of(OrderStatus.CREATED), null, null, pageable
         );
 
         assertEquals(1, result.getTotalElements());
@@ -170,16 +168,15 @@ class OrderServiceImplTest {
 
         when(orderRepository.findById(TEST_ORDER_ID)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(testOrder)).thenReturn(testOrder);
-        when(userProvider.getStrictUserInfo(TEST_EMAIL)).thenReturn(testUserInfo);
+        when(userProvider.getStrictUserInfoById(TEST_USER_ID)).thenReturn(testUserInfo);
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
-        OrderResponseDto result = orderService.updateOrderStatus(TEST_ORDER_ID, updateDto, TEST_EMAIL);
+        OrderResponseDto result = orderService.updateOrderStatus(TEST_ORDER_ID, updateDto);
 
         assertNotNull(result);
         assertEquals(OrderStatus.SHIPPING, testOrder.getStatus());
         verify(orderRepository, times(1)).save(testOrder);
     }
-
 
 
     @Test
@@ -201,19 +198,16 @@ class OrderServiceImplTest {
     }
 
 
-
     @Test
     void getOrdersByUserId_Success() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
 
         when(orderRepository.findAllByUserId(TEST_USER_ID, pageable)).thenReturn(orderPage);
-
-        when(userProvider.getUserInfoForRead(TEST_EMAIL)).thenReturn(testUserInfo);
-
+        when(userProvider.getUserInfoByIdForRead(TEST_USER_ID)).thenReturn(testUserInfo);
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
-        Page<OrderResponseDto> result = orderService.getOrdersByUserId(TEST_USER_ID, TEST_EMAIL, pageable);
+        Page<OrderResponseDto> result = orderService.getOrdersByUserId(TEST_USER_ID, pageable);
 
         assertEquals(1, result.getTotalElements());
     }
@@ -225,10 +219,10 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
 
         when(orderRepository.findAllByIdIn(ids, pageable)).thenReturn(orderPage);
-        when(userProvider.getUserInfoForRead(TEST_EMAIL)).thenReturn(testUserInfo);
+        when(userProvider.getUserInfoByIdForRead(TEST_USER_ID)).thenReturn(testUserInfo);
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
-        Page<OrderResponseDto> result = orderService.getOrdersByIds(ids, TEST_EMAIL, pageable);
+        Page<OrderResponseDto> result = orderService.getOrdersByIds(ids, pageable);
 
         assertEquals(1, result.getTotalElements());
     }
@@ -241,13 +235,11 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
 
         when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
-        when(userProvider.getUserInfoForRead(TEST_EMAIL)).thenReturn(testUserInfo);
+        when(userProvider.getUserInfoByIdForRead(TEST_USER_ID)).thenReturn(testUserInfo);
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
-        // 1. Все параметры переданы (userId != null, statuses не пуст, from != null)
         Page<OrderResponseDto> result = orderService.getFilteredOrders(
                 TEST_USER_ID,
-                TEST_EMAIL,
                 List.of(OrderStatus.CREATED),
                 LocalDateTime.now().minusDays(1),
                 LocalDateTime.now(),
@@ -265,12 +257,11 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
 
         when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
-        when(userProvider.getUserInfoForRead(TEST_EMAIL)).thenReturn(testUserInfo);
+        when(userProvider.getUserInfoByIdForRead(TEST_USER_ID)).thenReturn(testUserInfo);
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
         Page<OrderResponseDto> result = orderService.getFilteredOrders(
                 null,
-                TEST_EMAIL,
                 null,
                 null,
                 null,
@@ -287,12 +278,11 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
 
         when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
-        when(userProvider.getUserInfoForRead(TEST_EMAIL)).thenReturn(testUserInfo);
+        when(userProvider.getUserInfoByIdForRead(TEST_USER_ID)).thenReturn(testUserInfo);
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
         Page<OrderResponseDto> result = orderService.getFilteredOrders(
                 null,
-                TEST_EMAIL,
                 List.of(),
                 null,
                 LocalDateTime.now(),
@@ -309,12 +299,11 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
 
         when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
-        when(userProvider.getUserInfoForRead(TEST_EMAIL)).thenReturn(testUserInfo);
+        when(userProvider.getUserInfoByIdForRead(TEST_USER_ID)).thenReturn(testUserInfo);
         when(orderMapper.toDtoWithUser(testOrder, testUserInfo)).thenReturn(testResponseDto);
 
         Page<OrderResponseDto> result = orderService.getFilteredOrders(
                 null,
-                TEST_EMAIL,
                 null,
                 LocalDateTime.now(),
                 null,
@@ -323,5 +312,4 @@ class OrderServiceImplTest {
 
         assertEquals(1, result.getTotalElements());
     }
-
 }

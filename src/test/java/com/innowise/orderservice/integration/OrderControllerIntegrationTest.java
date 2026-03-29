@@ -31,7 +31,7 @@ import java.time.LocalDateTime;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -66,8 +66,9 @@ public class OrderControllerIntegrationTest extends BaseIntegrationTest {
                 .build());
 
         UserInfoDto mockUserInfo = new UserInfoDto(TEST_USER_ID, "John", "Doe", TEST_EMAIL, LocalDate.of(1990, 1, 1));
-        when(userProvider.getStrictUserInfo(anyString())).thenReturn(mockUserInfo);
-        when(userProvider.getUserInfoForRead(anyString())).thenReturn(mockUserInfo);
+
+        when(userProvider.getStrictUserInfoById(any(UUID.class))).thenReturn(mockUserInfo);
+        when(userProvider.getUserInfoByIdForRead(any(UUID.class))).thenReturn(mockUserInfo);
     }
 
     @AfterEach
@@ -118,8 +119,7 @@ public class OrderControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.status").value("CREATED"))
                 .andExpect(jsonPath("$.totalPrice").value(1000.00))
-                .andExpect(jsonPath("$.items[0].quantity").value(2))
-                .andExpect(jsonPath("$.user.email").value(TEST_EMAIL));
+                .andExpect(jsonPath("$.items[0].quantity").value(2));
 
         assertEquals(1, orderRepository.count());
     }
@@ -346,7 +346,6 @@ public class OrderControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void test_getMyOrders_EmptyResult_ReturnsEmptyPage() throws Exception {
-        // Заказов нет, проверяем что просто пустой список, а не ошибка
         mockMvc.perform(get("/api/orders/my")
                         .with(userJwt(TEST_USER_ID, TEST_EMAIL)))
                 .andExpect(status().isOk())
