@@ -11,13 +11,16 @@
         import com.innowise.orderservice.domain.mapper.order.OrderMapper;
         import com.innowise.orderservice.domain.service.OrderService;
         import com.innowise.orderservice.domain.specification.OrderSpecification;
+        import com.innowise.orderservice.kafka.OrderProducer;
         import com.innowise.orderservice.web.client.provider.UserProvider;
+        import com.innowise.orderservice.web.dto.event.OrderEventDto;
         import com.innowise.orderservice.web.dto.request.OrderItemRequestDto;
         import com.innowise.orderservice.web.dto.request.OrderRequestDto;
         import com.innowise.orderservice.web.dto.request.UpdateOrderStatusDto;
         import com.innowise.orderservice.web.dto.response.OrderResponseDto;
         import com.innowise.orderservice.web.dto.user.UserInfoDto;
         import lombok.RequiredArgsConstructor;
+        import lombok.extern.slf4j.Slf4j;
         import org.springframework.data.domain.Page;
         import org.springframework.data.domain.Pageable;
         import org.springframework.data.jpa.domain.Specification;
@@ -31,13 +34,14 @@
 
         @Service
         @RequiredArgsConstructor
+        @Slf4j
         @Transactional(readOnly = true)
         public class OrderServiceImpl implements OrderService {
 
             private final OrderRepository orderRepository;
             private final ItemRepository itemRepository;
             private final OrderMapper orderMapper;
-
+            private final OrderProducer orderProducer;
             private final UserProvider userProvider;
 
             @Override
@@ -63,6 +67,12 @@
 
                 order.setTotalPrice(totalPrice);
                 Order savedOrder = orderRepository.save(order);
+                OrderEventDto eventDto = new OrderEventDto(
+                        savedOrder.getId(),
+                        userId,
+                        savedOrder.getTotalPrice()
+                );
+                orderProducer.sendOrderCreatedEvent(eventDto);
 
                 UserInfoDto userInfo = userProvider.getStrictUserInfoById(userId);
                 return orderMapper.toDtoWithUser(savedOrder, userInfo);
@@ -135,5 +145,22 @@
                     UserInfoDto userInfo = userProvider.getUserInfoByIdForRead(order.getUserId());
                     return orderMapper.toDtoWithUser(order, userInfo);
                 });
+            }
+
+            @Override
+            @Transactional
+            public void handlePaymentEvent(Long orderId, String paymentStatus) {
+                log.info("Processing payment event for order: {}, status: {}", orderId, paymentStatus);
+
+                Order order = orderRepository.findById(orderId)
+                        .orElseThrow(() -> new OrderNotFoundException("Order not found: " + orderId));
+
+                if ("SUCCESS".equalsIgnoreCase(paymentStatus) || "PAID".equalsIgnoreCase(paymentStatus)) {
+                    order.setStatus(OrderStatus.PAID);
+                } else if ("FAIL".equalsIgnoreCase(paymentStatus) || "FAILED".equalsIgnoreCase(paymentStatus)) {
+                    order.setStatus(OrderStatus.FAILED);
+                }
+
+                orderRepository.save(order);
             }
         }

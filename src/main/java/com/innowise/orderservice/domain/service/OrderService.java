@@ -30,4 +30,6 @@ public interface OrderService {
 
     Page<OrderResponseDto> getOrdersByIds(List<Long> ids, Pageable pageable);
 
+    void handlePaymentEvent(Long orderId, String paymentStatus);
+
 }
